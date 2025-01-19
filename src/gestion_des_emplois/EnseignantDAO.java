@@ -14,18 +14,20 @@ import gestion_des_emplois.models.Enseignant;
 
 public class EnseignantDAO {
 	
-    public void enregistrerEnseignant(String nom, String matricule, String contact) {
-        String sql = "INSERT INTO enseignants (nom, matricule, contact) VALUES (?, ?, ?)";
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, nom);
-            statement.setString(2, matricule);
-            statement.setString(3, contact);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+	public boolean enregistrerEnseignant(String nom, String matricule, String contact) {
+	    String sql = "INSERT INTO enseignants (nom, matricule, contact) VALUES (?, ?, ?)";
+	    try (Connection connection = DatabaseConnection.getConnection();
+	         PreparedStatement statement = connection.prepareStatement(sql)) {
+	        statement.setString(1, nom);
+	        statement.setString(2, matricule);
+	        statement.setString(3, contact);
+	        statement.executeUpdate();
+	        return true; // Return true if insertion is successful
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false; // Return false if there's an error
+	    }
+	}
     
     public Enseignant rechercherEnseignant(String matricule) {
         String sql = "SELECT * FROM enseignants WHERE matricule = ?";
@@ -39,8 +41,8 @@ public class EnseignantDAO {
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 return new Enseignant(
-                        resultSet.getString("matricule"),
                         resultSet.getString("nom"),
+                        resultSet.getString("matricule"),
                         resultSet.getString("contact")
                 );
             }
@@ -120,7 +122,58 @@ public class EnseignantDAO {
         }
     }
     
+    public boolean isMatriculeDuplicate(String matricule) {
+        String sql = "SELECT COUNT(*) FROM enseignants WHERE matricule = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, matricule);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; 
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false; 
+    }
     
+    
+    public boolean isEnseignantOccupied(String enseignant, String jour, String heure) {
+        String sql = "SELECT COUNT(*) FROM seances WHERE enseignant = ? AND jour = ? AND heure = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, enseignant);
+            statement.setString(2, jour);
+            statement.setString(3, heure);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; // Retourne true si l'enseignant est occupé
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false; // Retourne false si l'enseignant n'est pas occupé ou en cas d'erreur
+    }
+    
+    public boolean isClasseOccupied(String classe, String jour, String heure) {
+        String sql = "SELECT COUNT(*) FROM seances WHERE classe = ? AND jour = ? AND heure = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, classe);
+            statement.setString(2, jour);
+            statement.setString(3, heure);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; // Retourne true si la classe est occupée
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false; // Retourne false si la classe n'est pas occupée ou en cas d'erreur
+    }
     
 
     // Ajoutez d'autres méthodes pour modifier, supprimer et rechercher des enseignants

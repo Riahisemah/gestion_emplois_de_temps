@@ -40,20 +40,76 @@ public class SeanceDAO {
         return seances;
     }
 
-public void enregistrerSeance(String classe, String matiere, String jour, String heure, String enseignant) {
-    String sql = "INSERT INTO seances (classe, matiere, jour, heure,enseignant) VALUES (?, ?, ?, ?, ?)";
-    try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement statement = connection.prepareStatement(sql)) {
-        statement.setString(1, classe);
-        statement.setString(2, matiere);
-        statement.setString(3, jour);
-        statement.setString(4, heure);
-        statement.setString(5, enseignant); // Add this line to set enseignant
-        statement.executeUpdate();
-    } catch (SQLException e) {
-        e.printStackTrace();
+    public boolean enregistrerSeance(String classe, String matiere, String jour, String heure, String enseignant) {
+        // Vérifier si la classe est déjà occupée
+        if (isClasseOccupied(classe, jour, heure)) {
+            System.out.println("La classe est déjà occupée à cette heure.");
+            return false; // Retourne false si la classe est occupée
+        }
+
+        // Vérifier si l'enseignant est déjà occupé
+        if (isEnseignantOccupied(enseignant, jour, heure)) {
+            System.out.println("L'enseignant est déjà occupé à cette heure.");
+            return false; // Retourne false si l'enseignant est occupé
+        }
+
+        // Si tout est bon, insérer la séance
+        String sql = "INSERT INTO seances (classe, matiere, jour, heure, enseignant) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, classe);
+            statement.setString(2, matiere);
+            statement.setString(3, jour);
+            statement.setString(4, heure);
+            statement.setString(5, enseignant);
+            statement.executeUpdate();
+            return true; // Retourne true si l'insertion est réussie
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false; // Retourne false en cas d'erreur
+        }
     }
-}
+    
+    
+    
+
+    public boolean isEnseignantOccupied(String enseignant, String jour, String heure) {
+        String sql = "SELECT COUNT(*) FROM seances WHERE enseignant = ? AND jour = ? AND heure = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, enseignant);
+            statement.setString(2, jour);
+            statement.setString(3, heure);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; // Retourne true si l'enseignant est occupé
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false; // Retourne false si l'enseignant n'est pas occupé ou en cas d'erreur
+    }
+    
+    public boolean isClasseOccupied(String classe, String jour, String heure) {
+        String sql = "SELECT COUNT(*) FROM seances WHERE classe = ? AND jour = ? AND heure = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, classe);
+            statement.setString(2, jour);
+            statement.setString(3, heure);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0; // Retourne true si la classe est occupée
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false; // Retourne false si la classe n'est pas occupée ou en cas d'erreur
+    }
+    
+
 
 
 public List<Seance> getSessionsByClassAndSubject(String classe, String matiere) {
@@ -160,6 +216,10 @@ public List<Seance> searchByClass(String classe) {
 
     return sessions;  // Return the list of sessions
 }
+
+
+
+
 
 
 
