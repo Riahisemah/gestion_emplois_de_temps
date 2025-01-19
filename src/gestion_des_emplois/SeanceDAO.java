@@ -74,6 +74,7 @@ public List<Seance> getSessionsByClassAndSubject(String classe, String matiere) 
         // Execute the query and process the result set
         ResultSet resultSet = preparedStatement.executeQuery();
         while (resultSet.next()) {
+        	System.out.println(resultSet);
             // Create a Seance object from the current row
             Seance seance = new Seance();
             seance.setId(resultSet.getInt("id"));
